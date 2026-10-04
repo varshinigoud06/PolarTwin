@@ -63,6 +63,7 @@ const jitter = (v, amount, min, max) => clamp(v + (Math.random() * amount * 2 - 
 function App() {
   const [page, setPage] = useState('dashboard');
   const [station, setStation] = useState('Maitri');
+  const [selectedEquipment, setSelectedEquipment] = useState('GEN-01');
   const [stations, setStations] = useState(initialStations);
   const [lastUpdate, setLastUpdate] = useState(new Date());
 
@@ -92,15 +93,25 @@ function App() {
   }, []);
 
   const data = stations[station];
-  
+  const equipment = data.equipment.find(e => e.id === selectedEquipment) || data.equipment[0];
+
   const selectStation = name => {
     setStation(name);
+    setSelectedEquipment('GEN-01');
   };
 
   return (
     <div className="app">
       <aside className="sidebar">
-        <div className="brand"><div className="brand-logo">❄</div><div><h2>POLAR-TWIN</h2><span>REMOTE STATION COMMAND</span></div></div>
+        <div className="brand">
+          <div className="brand-logo">
+            <img
+              src="https://commons.wikimedia.org/wiki/Special:FilePath/An_ariel_view_of_the_Indian_Station_Maitri%2C_Antarctica_on_February_2%2C2005_%281%29.jpg?width=500"
+              alt="Maitri Antarctic research station"
+            />
+          </div>
+          <div><h2>POLAR-TWIN</h2><span>REMOTE STATION COMMAND</span></div>
+        </div>
         <div className="live-indicator"><span /> LIVE SIMULATION</div>
         <nav>{nav.map(([id, icon, label]) => <button key={id} className={`nav-item ${page === id ? 'active' : ''}`} onClick={() => setPage(id)}><span>{icon}</span>{label}</button>)}</nav>
         <div className="sidebar-bottom"><div className="connection"><span className="green-dot" /> System Online</div><div className="station-mini"><small>ACTIVE STATION</small><strong>{station}</strong></div></div>
@@ -113,7 +124,7 @@ function App() {
         </header>
 
         {page === 'dashboard' && <Dashboard stations={stations} setPage={setPage} selectStation={selectStation} />}
-        {page === 'digital-twin' && <DigitalTwin station={station} setStation={selectStation} data={data} />}
+        {page === 'digital-twin' && <DigitalTwin station={station} setStation={selectStation} data={data} equipment={equipment} selectedEquipment={selectedEquipment} setSelectedEquipment={setSelectedEquipment} />}
         {page === 'energy' && <Energy station={station} setStation={selectStation} data={data} stations={stations} />}
         {page === 'environment' && <Environment station={station} setStation={selectStation} data={data} />}
         {page === 'infrastructure' && <Infrastructure station={station} setStation={selectStation} data={data} setPage={setPage} />}
@@ -140,434 +151,18 @@ function Dashboard({ stations, setPage, selectStation }) {
   </div>;
 }
 
-function DigitalTwin({ station, setStation, data }) {
-  const [selectedEquipment, setSelectedEquipment] = useState('GEN-01');
-  const equipment = Array.isArray(data?.equipment) ? data.equipment : [];
-
-  useEffect(() => {
-    if (!equipment.some((item) => item.id === selectedEquipment)) {
-      setSelectedEquipment(equipment[0]?.id || 'GEN-01');
-    }
-  }, [station, equipment, selectedEquipment]);
-
-  const current =
-    equipment.find((item) => item.id === selectedEquipment) ||
-    equipment[0];
-
-  const selectEquipment = (id) => setSelectedEquipment(id);
-
-  if (!data || equipment.length === 0) {
-    return (
-      <Page
-        title="Digital Twin"
-        subtitle="Interactive virtual representation of the selected Antarctic station"
-      >
-        <StationSelector station={station} setStation={setStation} />
-        <section className="panel">
-          <div className="empty-state">
-            <h2>Digital Twin data is loading…</h2>
-            <p>Please wait for the station telemetry to initialize.</p>
-          </div>
-        </section>
-      </Page>
-    );
-  }
-
-  return (
-    <Page
-      title="Digital Twin"
-      subtitle="Interactive virtual representation of the selected Antarctic station"
-    >
-      <StationSelector station={station} setStation={setStation} />
-
-      <div className="selected-station">
-        <span>ACTIVE STATION</span>
-        <strong>{station.toUpperCase()}</strong>
-        <small>{data.location} • Live simulated telemetry</small>
-      </div>
-
-      <div className="metric-grid">
-        <Metric icon="🌡" title="Temperature" value={`${data.temp}°C`} sub="Live" />
-        <Metric icon="⚡" title="Power" value={`${data.power} kW`} sub="Live" />
-        <Metric
-          icon="🏗"
-          title="Equipment Health"
-          value={`${Math.round(equipment.reduce((sum, item) => sum + Number(item.health || 0), 0) / equipment.length)}%`}
-          sub="Fleet average"
-        />
-        <Metric icon="👥" title="Personnel" value={data.personnel} sub="On station" />
-      </div>
-
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <h2>{station} Digital Twin</h2>
-            <p>Select a system on the station model to inspect it</p>
-          </div>
-          <span className="live-badge">● LIVE</span>
-        </div>
-
-        <div className="dt-layout">
-          <div className="dt-model">
-            <div className="dt-grid"></div>
-
-            <div className="dt-building">
-              <div className="dt-roof">ANTARCTIC RESEARCH STATION</div>
-              <div className="dt-window one"></div>
-              <div className="dt-window two"></div>
-              <div className="dt-window three"></div>
-              <div className="dt-window four"></div>
-              <div className="dt-door"></div>
-            </div>
-
-            {equipment.map((item, index) => (
-              <button
-                key={item.id}
-                className={`dt-node node-${index} ${
-                  current?.id === item.id ? "selected" : ""
-                }`}
-                onClick={() => selectEquipment(item.id)}
-              >
-                <span>
-                  {item.type === "Power" && "⚡"}
-                  {item.type === "Thermal" && "🔥"}
-                  {item.type === "Utility" && "💧"}
-                  {item.type === "Communication" && "📡"}
-                </span>
-                <strong>{item.id}</strong>
-                <small>{item.type}</small>
-                <b>{item.health}%</b>
-              </button>
-            ))}
-
-            <div className="dt-legend">
-              <span><i></i> Operational</span>
-              <span><i></i> Live telemetry</span>
-            </div>
-          </div>
-
-          {current && (
-            <div className="dt-details">
-              <div className="dt-detail-head">
-                <div>
-                  <span>SELECTED SYSTEM</span>
-                  <h2>{current.name}</h2>
-                  <p>{current.id} • {current.type}</p>
-                </div>
-                <strong className={current.status === "Attention" ? "status-warn" : "status-good"}>
-                  ● {current.status}
-                </strong>
-              </div>
-
-              <div className="dt-reading-grid">
-                <Detail label="Health" value={`${current.health}%`} />
-                <Detail label="Load" value={`${current.load}%`} />
-                <Detail label="Temperature" value={`${current.temp}°C`} />
-                <Detail label="Voltage" value={`${current.voltage} V`} />
-                <Detail label="Current" value={`${current.current} A`} />
-                <Detail label="Vibration" value={`${current.vibration} mm/s`} />
-              </div>
-
-              <div className="dt-health">
-                <div>
-                  <span>Equipment health</span>
-                  <b>{current.health}%</b>
-                </div>
-                <Progress value={current.health} />
-              </div>
-
-              <div className="dt-service">
-                <div>
-                  <span>Last maintenance</span>
-                  <strong>{current.last}</strong>
-                </div>
-                <div>
-                  <span>Next maintenance</span>
-                  <strong>{current.next}</strong>
-                </div>
-              </div>
-
-              <div className="dt-actions">
-                <button
-                  className="primary-button"
-                  onClick={() => alert(`${current.name} diagnostic started for ${station}.`)}
-                >
-                  RUN DIAGNOSTIC
-                </button>
-                <button
-                  className="secondary-button"
-                  onClick={() => alert(`Maintenance history: ${current.name}`)}
-                >
-                  VIEW HISTORY
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <h2>Station Systems</h2>
-            <p>Click any row to inspect detailed telemetry</p>
-          </div>
-        </div>
-
-        <div className="dt-table">
-          <div className="dt-table-head">
-            <span>System</span>
-            <span>Health</span>
-            <span>Load</span>
-            <span>Temperature</span>
-            <span>Status</span>
-          </div>
-
-          {equipment.map((item) => (
-            <button
-              key={item.id}
-              className={`dt-table-row ${current?.id === item.id ? "active" : ""}`}
-              onClick={() => selectEquipment(item.id)}
-            >
-              <span>
-                <strong>{item.name}</strong>
-                <small>{item.id}</small>
-              </span>
-              <span>{item.health}%</span>
-              <span>{item.load}%</span>
-              <span>{item.temp}°C</span>
-              <span className={item.status === "Attention" ? "status-warn" : "status-good"}>
-                ● {item.status}
-              </span>
-            </button>
-          ))}
-        </div>
-      </section>
-    </Page>
-  );
+function DigitalTwin({ station, setStation, data, equipment, selectedEquipment, setSelectedEquipment }) {
+  return <Page title="Digital Twin" subtitle="Interactive virtual representation of the selected Antarctic station"><StationSelector station={station} setStation={setStation} /><div className="metric-grid"><Metric icon="🌡" title="Temperature" value={`${data.temp}°C`} sub="Live" /><Metric icon="⚡" title="Power" value={`${data.power} kW`} sub="Live" /><Metric icon="🏗" title="Equipment Health" value={`${Math.round(data.equipment.reduce((a,e)=>a+e.health,0)/data.equipment.length)}%`} sub="Fleet average" /><Metric icon="👥" title="Personnel" value={data.personnel} sub="On station" /></div><section className="panel"><div className="panel-header"><div><h2>{station} Digital Twin Model</h2><p>Click an equipment zone to inspect live telemetry</p></div><span className="live-badge">● LIVE</span></div><div className="twin-layout"><div className="station-model"><div className="model-snow" /><div className="station-building"><div className="roof" /><div className="win w1"/><div className="win w2"/><div className="win w3"/><div className="win w4"/><div className="door"/></div>{data.equipment.map((e,i)=><button key={e.id} className={`model-node node-${i} ${selectedEquipment===e.id?'selected':''}`} onClick={()=>setSelectedEquipment(e.id)}><span>{e.type}</span><b>{e.health}%</b></button>)}</div><EquipmentDetail equipment={equipment} /></div></section><section className="panel"><div className="panel-header"><h2>Station Systems</h2><p>Equipment inventory</p></div><div className="equipment-table">{data.equipment.map(e=><div className="table-row" key={e.id} onClick={()=>setSelectedEquipment(e.id)}><span><b>{e.name}</b><small>{e.id} • {e.type}</small></span><span>{e.load}% load</span><span>{e.health}% health</span><span className={e.status==='Attention'?'status-warn':'status-good'}>● {e.status}</span></div>)}</div></section></Page>;
 }
 
 function EquipmentDetail({ equipment }) { return <div className="detail-card"><div className="detail-title"><div><span className="eyebrow">SELECTED EQUIPMENT</span><h2>{equipment.name}</h2><p>{equipment.id} • {equipment.type}</p></div><span className={equipment.status==='Attention'?'status-warn':'status-good'}>● {equipment.status}</span></div><div className="detail-grid"><Detail label="Health" value={`${equipment.health}%`} /><Detail label="Load" value={`${equipment.load}%`} /><Detail label="Temperature" value={`${equipment.temp}°C`} /><Detail label="Voltage" value={`${equipment.voltage} V`} /><Detail label="Current" value={`${equipment.current} A`} /><Detail label="Vibration" value={`${equipment.vibration} mm/s`} /></div><div className="service-box"><div><span>Last maintenance</span><strong>{equipment.last}</strong></div><div><span>Next maintenance</span><strong>{equipment.next}</strong></div></div><div className="button-row"><button className="primary-button">VIEW SENSOR HISTORY</button><button className="secondary-button">CREATE MAINTENANCE REQUEST</button></div></div>; }
 
-function Energy({ station, setStation, data, stations }) {
-  const base = station === 'Maitri'
-    ? [286, 294, 310, 325, 318, 305]
-    : [260, 268, 280, 292, 286, 274];
-  const chart = base.map((power, i) => ({ label: ['00', '04', '08', '12', '16', '20'][i], power }))
-    .concat([{ label: 'NOW', power: data.power }]);
-
-  const generatorOutput = Math.round(data.power * 0.74);
-  const renewable = station === 'Maitri' ? 12 : 9;
-  const dailyUsage = (data.power * 24 / 1000).toFixed(1);
-  const peakLoad = Math.max(...chart.map(x => x.power));
-  const reserveMargin = Math.max(0, 100 - Math.round(data.energy));
-  const efficiency = Math.round(88 + data.energy / 10);
-  const highLoad = data.power > 320;
-
-  const equipmentPower = data.equipment.map((item) => ({
-    ...item,
-    power: Math.max(8, Math.round(data.power * item.load / 100 * 0.18)),
-  }));
-
-  return (
-    <Page title="Energy & Power" subtitle="Detailed power generation, consumption and reserve monitoring">
-      <StationSelector station={station} setStation={setStation} />
-
-      <div className="metric-grid">
-        <Metric icon="⚡" title="Current Load" value={`${data.power} kW`} sub={station} />
-        <Metric icon="🔋" title="Battery" value={`${data.battery}%`} sub="Available reserve" />
-        <Metric icon="☀" title="Renewable Share" value={`${renewable}%`} sub="Estimated contribution" />
-        <Metric icon="🎯" title="Peak Load" value={`${peakLoad} kW`} sub="Today" />
-      </div>
-
-      <section className="panel">
-        <div className="panel-header">
-          <div><h2>{station} Power Trend</h2><p>Simulated 24-hour station load profile</p></div>
-          <span className="live-badge">● LIVE</span>
-        </div>
-        <BarChart data={chart} />
-      </section>
-
-      <section className="panel">
-        <div className="panel-header">
-          <div><h2>Generation & Reserve</h2><p>Current electrical system condition</p></div>
-          <span className={highLoad ? 'status-warn' : 'status-good'}>● {highLoad ? 'HIGH LOAD' : 'NORMAL'}</span>
-        </div>
-        <div className="detail-grid four">
-          <Detail label="Generator output" value={`${generatorOutput} kW`} />
-          <Detail label="Daily usage" value={`${dailyUsage} MWh`} />
-          <Detail label="Reserve margin" value={`${reserveMargin}%`} />
-          <Detail label="System efficiency" value={`${efficiency}%`} />
-        </div>
-        <div className="snapshot-grid">
-          <div className="snapshot">
-            <div className="snapshot-head"><strong>Battery reserve</strong><span>{data.battery}%</span></div>
-            <Progress label="Available capacity" value={data.battery} />
-          </div>
-          <div className="snapshot">
-            <div className="snapshot-head"><strong>Renewable contribution</strong><span>{renewable}%</span></div>
-            <Progress label="Solar / renewable share" value={renewable} />
-          </div>
-        </div>
-      </section>
-
-      <section className="panel">
-        <div className="panel-header">
-          <div><h2>Equipment-wise Consumption</h2><p>Estimated contribution to current station load</p></div>
-        </div>
-        <div className="equipment-table">
-          {equipmentPower.map((item) => (
-            <div className="table-row" key={item.id}>
-              <span><b>{item.name}</b><small>{item.id} • {item.type}</small></span>
-              <span>{item.load}% load</span>
-              <span>{item.power} kW</span>
-              <span className={item.load >= 75 ? 'status-warn' : 'status-good'}>● {item.load >= 75 ? 'HIGH' : 'NORMAL'}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="panel">
-        <div className="panel-header"><div><h2>Station Energy Comparison</h2><p>Live current load across both stations</p></div></div>
-        <ComparisonBar name="Maitri" value={stations.Maitri.power} max={400} />
-        <ComparisonBar name="Bharati" value={stations.Bharati.power} max={400} />
-      </section>
-
-      <section className="panel">
-        <div className="panel-header"><div><h2>Energy Alerts</h2><p>Threshold-based operational assessment</p></div></div>
-        <div className="table-row">
-          <span><b>{station} load condition</b><small>Current consumption vs operational threshold</small></span>
-          <span>{data.power} kW</span>
-          <span>{highLoad ? 'Above 320 kW' : 'Within normal range'}</span>
-          <span className={highLoad ? 'status-warn' : 'status-good'}>● {highLoad ? 'WARNING' : 'NORMAL'}</span>
-        </div>
-        <div className="table-row">
-          <span><b>Battery reserve</b><small>Backup power availability</small></span>
-          <span>{data.battery}%</span>
-          <span>Minimum target: 60%</span>
-          <span className={data.battery < 60 ? 'status-warn' : 'status-good'}>● {data.battery < 60 ? 'LOW' : 'HEALTHY'}</span>
-        </div>
-      </section>
-    </Page>
-  );
-}
+function Energy({ station, setStation, data, stations }) { const base=station==='Maitri'?[286,294,310,325,318,305]:[260,268,280,292,286,274]; const chart=base.map((power,i)=>({label:['00','04','08','12','16','20'][i],power})).concat([{label:'NOW',power:data.power}]); return <Page title="Energy & Power" subtitle="Detailed power generation, consumption and reserve monitoring"><StationSelector station={station} setStation={setStation}/><div className="metric-grid"><Metric icon="⚡" title="Current Load" value={`${data.power} kW`} sub={station}/><Metric icon="🔋" title="Battery" value={`${data.battery}%`} sub="Available reserve"/><Metric icon="📈" title="Energy Reserve" value={`${data.energy}%`} sub="Estimated remaining"/><Metric icon="🎯" title="Peak Load" value={`${Math.max(...chart.map(x=>x.power))} kW`} sub="Today"/></div><section className="panel"><div className="panel-header"><div><h2>{station} Power Trend</h2><p>Simulated 24-hour load profile</p></div><span className="live-badge">● LIVE</span></div><BarChart data={chart} /></section><section className="panel"><div className="panel-header"><h2>Energy System Details</h2></div><div className="detail-grid four"><Detail label="Generator output" value={`${Math.round(data.power*0.74)} kW`} /><Detail label="Critical load" value={`${Math.round(data.power*0.31)} kW`} /><Detail label="Reserve margin" value={`${100-Math.round(data.energy)}%`} /><Detail label="Efficiency" value={`${Math.round(88+data.energy/10)}%`} /></div></section><section className="panel"><div className="panel-header"><h2>Station Comparison</h2><p>Live current load</p></div><ComparisonBar name="Maitri" value={stations.Maitri.power} max={400}/><ComparisonBar name="Bharati" value={stations.Bharati.power} max={400}/></section></Page>; }
 
 function Environment({ station, setStation, data }) { const sensors=[['Air Temperature',`${data.temp}°C`,'Threshold: -30 to -10°C','Normal'],['Humidity',`${data.humidity}%`,'Threshold: 40 to 90%','Normal'],['Wind Speed',`${data.wind} km/h`,'Advisory above 35 km/h',data.wind>35?'Attention':'Normal'],['Pressure',`${data.pressure} hPa`,'Live atmospheric pressure','Normal']]; return <Page title="Environment Monitoring" subtitle="Multi-sensor environmental conditions and threshold monitoring"><StationSelector station={station} setStation={setStation}/><div className="sensor-grid">{sensors.map(([name,value,threshold,status])=><div className="sensor-card" key={name}><div><span>{name}</span><strong>{value}</strong></div><em className={status==='Attention'?'status-warn':'status-good'}>● {status}</em><small>{threshold}</small></div>)}</div><section className="panel"><div className="panel-header"><h2>Environmental Trend</h2><span className="live-badge">● LIVE</span></div><MiniTrend base={Math.abs(data.temp)} unit="°C" /></section><section className="panel"><div className="panel-header"><h2>Sensor Diagnostics</h2><p>Monitoring health</p></div><div className="equipment-table">{['Temperature sensor','Humidity sensor','Wind sensor','Pressure sensor','Snow / ice monitor'].map((x,i)=><div className="table-row" key={x}><span><b>{x}</b><small>SENSOR-0{i+1}</small></span><span>Sampling 3s</span><span>Signal {92-i*2}%</span><span className="status-good">● ONLINE</span></div>)}</div></section></Page>; }
 
-function Infrastructure({ station, setStation, data, setPage }) {
-  const [selectedId, setSelectedId] = useState(data.equipment[0]?.id || '');
-  const selected = data.equipment.find(e => e.id === selectedId) || data.equipment[0];
+function Infrastructure({ station, setStation, data, setPage }) { return <Page title="Infrastructure" subtitle="Equipment-level infrastructure health and operational status"><StationSelector station={station} setStation={setStation}/><div className="metric-grid"><Metric icon="🏗" title="Fleet Health" value={`${Math.round(data.equipment.reduce((a,e)=>a+e.health,0)/data.equipment.length)}%`} sub={station}/><Metric icon="⚙" title="Operational" value={`${data.equipment.filter(e=>e.status==='Operational').length}/${data.equipment.length}`} sub="Equipment"/><Metric icon="⚠" title="Attention" value={data.equipment.filter(e=>e.status==='Attention').length} sub="Needs review"/><Metric icon="🔧" title="Next Service" value="10–21 Oct" sub="Upcoming"/></div><section className="panel"><div className="panel-header"><div><h2>Equipment Health</h2><p>Click an item for detailed telemetry</p></div></div><div className="equipment-cards">{data.equipment.map(e=><div className="equipment-card" key={e.id}><div className="card-top"><div><span className="eyebrow">{e.id}</span><h3>{e.name}</h3></div><span className={e.status==='Attention'?'status-warn':'status-good'}>● {e.status}</span></div><div className="health-number">{e.health}%</div><Progress label="Health" value={e.health}/><div className="mini-stats"><span>Load <b>{e.load}%</b></span><span>Temp <b>{e.temp}°C</b></span><span>Current <b>{e.current} A</b></span></div><button className="secondary-button" onClick={()=>setPage('digital-twin')}>VIEW FULL DETAILS →</button></div>)}</div></section></Page>; }
 
-  useEffect(() => {
-    if (!data.equipment.some(e => e.id === selectedId)) {
-      setSelectedId(data.equipment[0]?.id || '');
-    }
-  }, [data.equipment, selectedId]);
-
-  const averageHealth = Math.round(
-    data.equipment.reduce((sum, e) => sum + e.health, 0) / data.equipment.length
-  );
-
-  return (
-    <Page title="Infrastructure" subtitle="Equipment-level infrastructure health and operational status">
-      <StationSelector station={station} setStation={setStation} />
-
-      <div className="metric-grid">
-        <Metric icon="🏗" title="Fleet Health" value={`${averageHealth}%`} sub={station} />
-        <Metric icon="⚙" title="Operational" value={`${data.equipment.filter(e => e.status === 'Operational').length}/${data.equipment.length}`} sub="Equipment" />
-        <Metric icon="⚠" title="Attention" value={data.equipment.filter(e => e.status === 'Attention').length} sub="Needs review" />
-        <Metric icon="🔧" title="Next Service" value="10–21 Oct" sub="Upcoming" />
-      </div>
-
-      <section className="panel">
-        <div className="panel-header">
-          <div>
-            <h2>Station Infrastructure</h2>
-            <p>Select equipment to inspect live telemetry and maintenance information.</p>
-          </div>
-          <span className="status-good">● {station} ONLINE</span>
-        </div>
-
-        <div className="equipment-cards">
-          {data.equipment.map(e => (
-            <button
-              type="button"
-              className="equipment-card"
-              key={e.id}
-              onClick={() => setSelectedId(e.id)}
-              style={{
-                textAlign: 'left',
-                cursor: 'pointer',
-                border: selected?.id === e.id ? '1px solid rgba(91, 189, 255, .9)' : undefined,
-                boxShadow: selected?.id === e.id ? '0 0 0 1px rgba(91, 189, 255, .18), 0 12px 30px rgba(0,0,0,.16)' : undefined
-              }}
-            >
-              <div className="card-top">
-                <div>
-                  <span className="eyebrow">{e.id}</span>
-                  <h3>{e.name}</h3>
-                </div>
-                <span className={e.status === 'Attention' ? 'status-warn' : 'status-good'}>● {e.status}</span>
-              </div>
-              <div className="health-number">{e.health}%</div>
-              <Progress label="Health" value={e.health} />
-              <div className="mini-stats">
-                <span>Load <b>{e.load}%</b></span>
-                <span>Temp <b>{e.temp}°C</b></span>
-                <span>Current <b>{e.current} A</b></span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {selected && (
-        <section className="panel" style={{ marginTop: 18 }}>
-          <div className="panel-header">
-            <div>
-              <span className="eyebrow">SELECTED EQUIPMENT · {selected.id}</span>
-              <h2>{selected.name}</h2>
-              <p>{selected.type} system at {station} station</p>
-            </div>
-            <span className={selected.status === 'Attention' ? 'status-warn' : 'status-good'}>
-              ● {selected.status}
-            </span>
-          </div>
-
-          <div className="metric-grid">
-            <Metric icon="❤️" title="Equipment Health" value={`${selected.health}%`} sub="Current condition" />
-            <Metric icon="⚡" title="Load" value={`${selected.load}%`} sub="Operating load" />
-            <Metric icon="🌡" title="Temperature" value={`${selected.temp}°C`} sub="Live sensor" />
-            <Metric icon="〽" title="Vibration" value={`${selected.vibration} mm/s`} sub="Condition monitoring" />
-          </div>
-
-          <div className="detail-grid">
-            <div className="detail-card">
-              <span className="eyebrow">ELECTRICAL</span>
-              <h3>Power telemetry</h3>
-              <div className="detail-row"><span>Voltage</span><strong>{selected.voltage} V</strong></div>
-              <div className="detail-row"><span>Current</span><strong>{selected.current} A</strong></div>
-              <div className="detail-row"><span>Load</span><strong>{selected.load}%</strong></div>
-            </div>
-
-            <div className="detail-card">
-              <span className="eyebrow">MAINTENANCE</span>
-              <h3>Service information</h3>
-              <div className="detail-row"><span>Last service</span><strong>{selected.last}</strong></div>
-              <div className="detail-row"><span>Next service</span><strong>{selected.next}</strong></div>
-              <div className="detail-row"><span>Condition</span><strong>{selected.status}</strong></div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: 10, marginTop: 18, flexWrap: 'wrap' }}>
-            <button className="primary-button" onClick={() => setPage('digital-twin')}>OPEN IN DIGITAL TWIN →</button>
-            <button className="secondary-button" onClick={() => setPage('maintenance')}>VIEW MAINTENANCE →</button>
-          </div>
-        </section>
-      )}
-    </Page>
-  );
-}
 function Logistics({ station, setStation, data }) { return <Page title="Logistics & Inventory" subtitle="Supplies, consumption rates and resupply readiness"><StationSelector station={station} setStation={setStation}/><div className="metric-grid"><Metric icon="📦" title="Inventory Health" value={`${Math.round(data.inventory.reduce((a,x)=>a+x.stock,0)/data.inventory.length)}%`} sub="Average stock"/><Metric icon="⛽" title="Fuel" value={`${data.inventory[1].stock}%`} sub={`${data.inventory[1].days} days remaining`}/><Metric icon="💊" title="Medicines" value={`${data.inventory[2].stock}%`} sub={`${data.inventory[2].days} days remaining`}/><Metric icon="🚚" title="Next Resupply" value="12 days" sub="Estimated"/></div><section className="panel"><div className="panel-header"><h2>{station} Inventory</h2><p>Live stock readiness</p></div><div className="inventory-detail">{data.inventory.map(item=><div className="inventory-item" key={item.name}><div className="inventory-head"><span><b>{item.name}</b><small>{item.days} days remaining</small></span><strong>{item.stock}%</strong></div><Progress label="" value={item.stock}/><div className="inventory-foot"><span className={item.status==='Low'?'status-warn':item.status==='Monitor'?'status-info':'status-good'}>● {item.status}</span><span>Consumption monitored</span></div></div>)}</div></section></Page>; }
 
 function Personnel({ station, setStation, data }) { return <Page title="Personnel" subtitle="Station personnel status, availability and safety overview"><StationSelector station={station} setStation={setStation}/><div className="metric-grid"><Metric icon="👥" title="Total Personnel" value={data.personnel} sub={station}/><Metric icon="💚" title="Healthy" value={data.medical.healthy} sub="Personnel"/><Metric icon="⚠" title="Attention" value={data.medical.attention} sub="Medical monitoring"/><Metric icon="🚨" title="Emergency" value={data.medical.emergency} sub="Immediate attention"/></div><section className="panel"><div className="panel-header"><h2>Personnel Overview</h2><span className="status-good">● ALL ACCOUNTED</span></div><div className="personnel-grid"><PersonnelGroup name="Research Team" count={Math.round(data.personnel*.34)} /><PersonnelGroup name="Engineering" count={Math.round(data.personnel*.24)} /><PersonnelGroup name="Operations" count={Math.round(data.personnel*.21)} /><PersonnelGroup name="Support" count={data.personnel-Math.round(data.personnel*.34)-Math.round(data.personnel*.24)-Math.round(data.personnel*.21)} /></div></section><section className="panel"><div className="panel-header"><h2>Safety Status</h2><p>Linked to Medical module</p></div><div className="safety-row"><span>Personnel tracking</span><b className="status-good">ONLINE</b></div><div className="safety-row"><span>Emergency communication</span><b className="status-good">READY</b></div><div className="safety-row"><span>Medical response</span><b className="status-good">AVAILABLE</b></div></section></Page>; }
