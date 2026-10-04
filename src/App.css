@@ -102,3 +102,302 @@ body{background:#dce7ed;color:#18384b}
 .footer-live{background:#17384b;color:#d9edf4;border-top-color:#31596c;font-weight:700}
 
 @media(max-width:750px){.brand-logo{width:46px;height:46px;flex-basis:46px}}
+/* =========================================================
+   MOBILE RESPONSIVE LAYOUT
+   ========================================================= */
+
+@media (max-width: 600px) {
+
+  body {
+    overflow-x: hidden;
+  }
+
+  .app {
+    display: block;
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  /* Mobile sidebar becomes top navigation */
+  .sidebar {
+    position: relative;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 12px 12px 8px;
+    border-right: none;
+    border-bottom: 1px solid #2a5268;
+    overflow: visible;
+  }
+
+  /* Logo + title */
+  .brand {
+    padding: 4px 6px 10px;
+    justify-content: center;
+  }
+
+  .brand-logo {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+  }
+
+  .brand h2 {
+    font-size: 17px;
+  }
+
+  .brand span {
+    font-size: 8px;
+  }
+
+  /* Live indicator */
+  .live-indicator {
+    margin: 4px 0 10px;
+    text-align: center;
+    padding: 9px;
+  }
+
+  /* Horizontal navigation */
+  nav {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 3px 0 7px;
+    scrollbar-width: thin;
+  }
+
+  nav::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .nav-item {
+    flex: 0 0 auto;
+    width: auto;
+    white-space: nowrap;
+    padding: 9px 12px;
+    font-size: 10px;
+    gap: 6px;
+  }
+
+  .nav-item span {
+    width: auto;
+    font-size: 13px;
+  }
+
+  /* Hide bottom station block on mobile */
+  .sidebar-bottom {
+    display: none;
+  }
+
+  /* Main content takes full phone width */
+  .main {
+    width: 100%;
+    margin-left: 0;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .topbar {
+    min-height: auto;
+    padding: 14px 15px;
+    gap: 10px;
+  }
+
+  .topbar h1 {
+    font-size: 19px;
+  }
+
+  .topbar p {
+    font-size: 9px;
+    line-height: 1.4;
+  }
+
+  .topbar-right {
+    display: flex;
+    gap: 6px;
+  }
+
+  .live-badge {
+    font-size: 9px;
+  }
+
+  .topbar select {
+    padding: 7px 8px;
+    font-size: 10px;
+  }
+
+  /* Main page spacing */
+  .content {
+    width: 100%;
+    padding: 15px 12px 50px;
+  }
+
+  .page-heading h2 {
+    font-size: 19px;
+  }
+
+  .page-heading p {
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  /* Dashboard hero */
+  .hero {
+    padding: 17px;
+    margin-bottom: 14px;
+  }
+
+  .hero h2 {
+    font-size: 20px;
+    line-height: 1.3;
+  }
+
+  .hero p {
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .tiny-button {
+    font-size: 9px;
+    padding: 9px 11px;
+  }
+
+  /* All card grids become one column */
+  .station-grid,
+  .metric-grid,
+  .snapshot-grid,
+  .equipment-cards,
+  .inventory-detail,
+  .communication-grid,
+  .medical-grid,
+  .insight-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .metric-card {
+    min-height: 82px;
+    padding: 14px;
+  }
+
+  .metric-card strong {
+    font-size: 17px;
+  }
+
+  .station-card {
+    padding: 17px;
+  }
+
+  .station-temp {
+    font-size: 32px;
+  }
+
+  .station-data {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* Panels */
+  .panel {
+    padding: 15px;
+    margin-top: 14px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    align-items: flex-start;
+  }
+
+  .panel-header h2 {
+    font-size: 14px;
+  }
+
+  /* Digital twin */
+  .twin-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .station-model {
+    height: 330px;
+  }
+
+  .detail-grid,
+  .detail-grid.four {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Tables */
+  .table-row {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    padding: 13px 3px;
+  }
+
+  .dt-table {
+    overflow-x: auto;
+  }
+
+  .dt-table-head,
+  .dt-table-row {
+    min-width: 620px;
+  }
+
+  /* Charts */
+  .energy-chart {
+    height: 250px;
+    gap: 5px;
+    padding: 15px 4px 5px;
+    overflow-x: auto;
+  }
+
+  .chart-column {
+    min-width: 24px;
+  }
+
+  .chart-bar-wrapper {
+    height: 175px;
+  }
+
+  /* Personnel */
+  .personnel-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Medical */
+  .medical-emergency {
+    padding: 17px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .medical-form {
+    grid-template-columns: 1fr;
+  }
+
+  /* Alerts */
+  .alert-detail {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .alert-detail .tiny-button {
+    width: fit-content;
+  }
+
+  /* Footer */
+  .footer-live {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    text-align: center;
+    padding: 6px 8px;
+    font-size: 7px;
+  }
+}
